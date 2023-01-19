@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <stdbool.h>
+#include <time.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 
@@ -11,6 +12,9 @@
 
 const char* PRIMARY_IFACE = "eth0";
 const char* SECONDARY_IFACE = "wlan0";
+const int POLL_RATE = 1;
+const int PING_TIMEOUT = 4;
+const int PRIMARY_IFACE_RECOVERY_TIME = 600;
 
 bool check_interface_state(const char* iface) {
     char cmd[MAX_CMD_LEN];
@@ -59,34 +63,42 @@ void set_interface_state(const char* iface, bool state) {
 }
 
 int main() {
+    int consecutive_failures = 0;
+    time_t primary_iface_fail_time = 0;
+    bool primary_iface_failed = false;
+
     while (true) {
         if (check_interface_state(PRIMARY_IFACE)) {
             printf("Primary interface is up\n");
             if (check_internet_connectivity()) {
                 printf("Internet connectivity is good\n");
-                sleep(10);
+                consecutive_failures = 0;
+                primary_iface_failed = false;
             } else {
-                printf("Primary interface is down, failing over to secondary interface\n");
-                set_interface_state(PRIMARY_IFACE, false);
-                set_interface_state(SECONDARY_IFACE, true);
+                printf("Ping failed\n");
+                consecutive_failures++;
+                if (consecutive_failures >= PING_TIMEOUT) {
+                    printf("Primary interface is down, failing over to secondary interface\n");
+                    primary_iface_fail_time = time(NULL);
+                    primary_iface_failed = true;
+                    set_interface_state(PRIMARY_IFACE, false);
+                    set_interface_state(SECONDARY_IFACE, true);
+                }
             }
         } else {
-            printf("Primary interface is down\n");
-            if (check_interface_state(SECONDARY_IFACE)) {
-                printf("Secondary interface is up\n");
-                if (check_internet_connectivity()) {
-                    printf("Internet connectivity is good\n");
-                    sleep(10);
-                } else {
-                    printf("Secondary interface is down, failing back to primary interface\n");
+            if (primary_iface_failed) {
+                printf("Primary interface is down\n");
+                if (difftime(time(NULL), primary_iface_fail_time) >= PRIMARY_IFACE_RECOVERY_TIME) {
+                    printf("Primary interface recovered, failing back to primary interface\n");
+                    primary_iface_failed = false;
                     set_interface_state(SECONDARY_IFACE, false);
                     set_interface_state(PRIMARY_IFACE, true);
                 }
             } else {
-                printf("Secondary interface is down\n");
-                sleep(10);
+                printf("Primary interface is down\n");
             }
         }
+        sleep(POLL_RATE);
     }
     return 0;
 }
