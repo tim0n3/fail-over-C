@@ -1,0 +1,14 @@
+You can save the file inetmonit.service in the /etc/systemd/system/ directory. After that you can use these commands to manage the service:
+
+___________.
+sudo systemctl start inetmonit  # start the service
+sudo systemctl stop inetmonit   # stop the service
+sudo systemctl status inetmonit # check the status of the service
+sudo systemctl enable inetmonit # enable the service to start at boot
+sudo systemctl disable inetmonit # disable the service from starting at boot
+___________.
+
+This service file ensures that the inetmonit program is run as soon as the network target is reached, and that it is run as the root user. 
+The service is set to always restart if it crashes. Also, it is enabled to start at boot.
+
+It is important to note that, in order for the program to work as expected, it should be run as root and you should check that your firewall rules permit ICMP (ping) traffic.
