@@ -2,7 +2,7 @@
 
 # Check if script is running as root or with sudo
 if [ "$EUID" -ne 0 ]
-  then echo "Please run as root or with sudo"
+  then echo "Error: Please run as root or with sudo" | tee -a errors-installer.log && cat errors-installer.log
   exit
 fi
 
