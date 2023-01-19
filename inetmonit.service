@@ -1,0 +1,11 @@
+[Unit]
+Description=Internet Connectivity Monitor
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/inetmonit
+Restart=always
+User=root
+
+[Install]
+WantedBy=multi-user.target
