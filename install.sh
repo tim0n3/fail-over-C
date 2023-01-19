@@ -17,6 +17,15 @@ else
   echo "/usr/bin/ folder exists"
 fi
 
+# Check if inetmonit exists
+if [ ! -f "./inetmonit" ]; then
+    # Compile the program
+    gcc -v failover.c -o inetmonit
+    echo "inetmonit has been compiled from src"
+else
+    echo "inetmonit exists"
+fi
+
 # Copy inetmonit to /usr/bin/
 cp inetmonit /usr/bin/
 
